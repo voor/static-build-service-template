@@ -1,0 +1,51 @@
+#@ load("@ytt:data", "data")
+
+apiVersion: kpack.io/v1alpha1
+kind: Image
+metadata:
+  name: simple-static-app
+  namespace: default
+spec:
+  build:
+    env:
+    - name: BP_NODE_RUN_SCRIPTS
+      value: build
+  builder:
+    kind: ClusterBuilder
+    name: node-script-builder
+  cacheSize: 2G
+  serviceAccount: default
+  source:
+    git:
+      revision: create-react-app
+      url: #@ data.values.git_project
+  tag: #@ "{}/simple-static-app".format(data.values.docker_repository)
+---
+apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
+  name: node-cluster-store
+spec:
+  sources:
+  - image: gcr.io/paketo-buildpacks/nodejs:0.6.0 #! Still using OSS buildpacks.
+  - image: gcr.io/paketo-buildpacks/nginx:0.3.1 #! Still using OSS buildpacks.
+---
+apiVersion: kpack.io/v1alpha1
+kind: ClusterBuilder
+metadata:
+  name: node-script-builder
+spec:
+  order:
+  - group:
+    - id: paketo-buildpacks/nodejs
+    - id: paketo-buildpacks/nginx
+  serviceAccountRef:
+    name: default
+    namespace: default
+  stack:
+    kind: ClusterStack
+    name: tiny #! Make sure tiny is properly loaded from the dependency syncer.
+  store:
+    kind: ClusterStore
+    name: node-cluster-store
+  tag: #@ "{}/node-script-builder:0.0.1".format(data.values.docker_repository)

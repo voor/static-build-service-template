@@ -1,0 +1,5 @@
+#@data/values
+---
+
+docker_repository: index.docker.io/voor/tbs #! Docker registry where you have TBS credentials setup out of band.
+git_project: https://github.com/voor/static-build-service-template.git #! This repo.
