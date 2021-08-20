@@ -10,6 +10,15 @@ spec:
     env:
     - name: BP_NODE_RUN_SCRIPTS
       value: build
+    - name: BP_INCLUDE_FILES
+      value: "nginx.conf:mime.types:build/*"
+    #! #! This doesn't work yet, so commented out.
+    #! bindings:
+    #! - name: nginx
+    #!   secretRef:
+    #!     name: nginx-config
+    #!   metadataRef:
+    #!     name: settings-binding-metadata
   builder:
     kind: ClusterBuilder
     name: node-script-builder
@@ -29,6 +38,8 @@ spec:
   sources:
   - image: gcr.io/paketo-buildpacks/nodejs:0.6.0 #! Still using OSS buildpacks.
   - image: gcr.io/paketo-buildpacks/nginx:0.3.1 #! Still using OSS buildpacks.
+  #! Experimental package.
+  - image: #@ "{}/source-removal@sha256:aea4747c01761e6debb7299badf0f9876f19eb2aba3b8759e406921fd3115472".format(data.values.docker_repository)
 ---
 apiVersion: kpack.io/v1alpha1
 kind: ClusterBuilder
@@ -39,13 +50,128 @@ spec:
   - group:
     - id: paketo-buildpacks/nodejs
     - id: paketo-buildpacks/nginx
+    - id: source-removal
   serviceAccountRef:
     name: default
     namespace: default
   stack:
     kind: ClusterStack
-    name: tiny #! Make sure tiny is properly loaded from the dependency syncer.
+    name: default #! Make sure tiny is properly loaded from the dependency syncer.
   store:
     kind: ClusterStore
     name: node-cluster-store
   tag: #@ "{}/node-script-builder:0.0.1".format(data.values.docker_repository)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: settings-binding-metadata
+data:
+  kind: nginx
+  provider: nginx
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nginx-config
+type: Opaque
+stringData:
+  mime.types: |
+    types {
+      text/html                             html htm shtml;
+      text/css                              css;
+      text/xml                              xml rss;
+      image/gif                             gif;
+      image/jpeg                            jpeg jpg;
+      application/x-javascript              js;
+      text/plain                            txt;
+      text/x-component                      htc;
+      text/mathml                           mml;
+      image/png                             png;
+      image/x-icon                          ico;
+      image/x-jng                           jng;
+      image/vnd.wap.wbmp                    wbmp;
+      application/java-archive              jar war ear;
+      application/mac-binhex40              hqx;
+      application/pdf                       pdf;
+      application/x-cocoa                   cco;
+      application/x-java-archive-diff       jardiff;
+      application/x-java-jnlp-file          jnlp;
+      application/x-makeself                run;
+      application/x-perl                    pl pm;
+      application/x-pilot                   prc pdb;
+      application/x-rar-compressed          rar;
+      application/x-redhat-package-manager  rpm;
+      application/x-sea                     sea;
+      application/x-shockwave-flash         swf;
+      application/x-stuffit                 sit;
+      application/x-tcl                     tcl tk;
+      application/x-x509-ca-cert            der pem crt;
+      application/x-xpinstall               xpi;
+      application/zip                       zip;
+      application/octet-stream              deb;
+      application/octet-stream              bin exe dll;
+      application/octet-stream              dmg;
+      application/octet-stream              eot;
+      application/octet-stream              iso img;
+      application/octet-stream              msi msp msm;
+      audio/mpeg                            mp3;
+      audio/x-realaudio                     ra;
+      video/mpeg                            mpeg mpg;
+      video/quicktime                       mov;
+      video/x-flv                           flv;
+      video/x-msvideo                       avi;
+      video/x-ms-wmv                        wmv;
+      video/x-ms-asf                        asx asf;
+      video/x-mng                           mng;
+    }
+  nginx.confg: |
+    worker_processes  5;  ## Default: 1
+    daemon off;
+    worker_rlimit_nofile 8192;
+
+    error_log stderr;
+
+    events {
+      worker_connections  4096;  ## Default: 1024
+    }
+
+    http {
+      server {
+        listen {{ port }};
+        server_name  localhost;
+        root /workspace/build;
+
+        location / {
+            expires -1;
+            try_files $uri /index.html;
+            add_header Last-Modified '';
+            if_modified_since off;
+            etag off;
+        }
+
+        location /static/ {
+            expires max;
+            try_files $uri =404;
+        }
+      }
+
+      server {
+          listen       8080;
+          server_name  localhost;
+
+          location = /status {
+              stub_status;
+          }
+      }
+
+      charset utf-8;
+      access_log /dev/stdout;
+      default_type application/octet-stream;
+      include mime.types;
+      sendfile on;
+
+      tcp_nopush on;
+      keepalive_timeout 30;
+      port_in_redirect off;
+    }
