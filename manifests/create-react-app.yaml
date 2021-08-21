@@ -50,7 +50,7 @@ spec:
   - group:
     - id: paketo-buildpacks/nodejs
     - id: paketo-buildpacks/nginx
-    - id: source-removal
+    - id: foresteckhardt/source-removal
   serviceAccountRef:
     name: default
     namespace: default
