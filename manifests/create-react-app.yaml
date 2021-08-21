@@ -38,7 +38,7 @@ spec:
   sources:
   - image: gcr.io/paketo-buildpacks/nodejs:0.6.0 #! Still using OSS buildpacks.
   - image: gcr.io/paketo-buildpacks/nginx:0.3.1 #! Still using OSS buildpacks.
-  #! Experimental package.
+  #! Experimental package.  Currently a fork at https://github.com/voor/source-removal
   - image: #@ "{}/source-removal@sha256:aea4747c01761e6debb7299badf0f9876f19eb2aba3b8759e406921fd3115472".format(data.values.docker_repository)
 ---
 apiVersion: kpack.io/v1alpha1
