@@ -39,7 +39,7 @@ spec:
   - image: gcr.io/paketo-buildpacks/nodejs:0.6.0 #! Still using OSS buildpacks.
   - image: gcr.io/paketo-buildpacks/nginx:0.3.1 #! Still using OSS buildpacks.
   #! Experimental package.  Currently a fork at https://github.com/voor/source-removal
-  - image: #@ "{}/source-removal@sha256:aea4747c01761e6debb7299badf0f9876f19eb2aba3b8759e406921fd3115472".format(data.values.docker_repository)
+  - image: #@ "{}/foresteckhardt_source-removal@sha256:20775318e0f88a80dfc34a4b60cdc26a6b0e9396ce25bfd3866d3eefb72e009d".format(data.values.docker_repository)
 ---
 apiVersion: kpack.io/v1alpha1
 kind: ClusterBuilder
